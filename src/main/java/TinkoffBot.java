@@ -59,8 +59,14 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             }*/
 
+            if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
 
-            if(update.getMessage().getText().toString().equals("/status")) {
+                String startMessage = "Если вы хотите узнать какие акции доступны к покупке введите число, которое будет являться страницей списка (на каждой странице по 10 акций) .\n" +
+                        "Если вы хотите увидеть список акций в вашем портфеле напишите /status";
+
+                execute(new SendMessage(str_chat_id, startMessage));
+            }
+            else if(update.getMessage().getText().toString().equals("/status")) {
 
                 ArrayList<String> portfolioStatus = new ArrayList<>();
 
