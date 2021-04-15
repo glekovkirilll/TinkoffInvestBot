@@ -67,8 +67,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
             //String brokListStr = String.join(System.lineSeparator(), brokList);
             Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
 
-            for(int i = numberOfElements * 10 - 10; i < numberOfElements * 10 -1; i++) {
-                execute(new SendMessage(str_chat_id, brokList.get(i )));
+            for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 -1; i++) {
+                execute(new SendMessage(str_chat_id, brokList.get(i)));
             }
         }
     }
