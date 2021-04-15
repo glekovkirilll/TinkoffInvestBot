@@ -61,15 +61,31 @@ public class TinkoffBot extends TelegramLongPollingBot {
             ArrayList<String> brokList = new ArrayList<String>();
 
             api.getMarketContext().getMarketStocks().get().instruments.forEach(element -> {
-                brokList.add(element.figi + " " + element.name) ;
+                brokList.add(element.figi + " " + element.name + System.lineSeparator()) ;
             });
 
-            //String brokListStr = String.join(System.lineSeparator(), brokList);
+
             Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
 
-            for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 -1; i++) {
-                execute(new SendMessage(str_chat_id, brokList.get(i)));
+            String startNumber = Integer.toString(numberOfElements * 10 - 10);
+            String endNumber = Integer.toString(numberOfElements * 10 -1);
+
+            ArrayList<String> shortList = new ArrayList<String>();
+
+            shortList.add("List of Shares");
+            shortList.add("From " + startNumber + " to " + endNumber + System.lineSeparator());
+            shortList.add("=============================" + System.lineSeparator());
+
+
+            for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
+                shortList.add(brokList.get(i));
             }
+
+
+            String shortListStr = String.join(System.lineSeparator(), shortList);
+
+
+            execute(new SendMessage(str_chat_id, shortListStr));
         }
     }
 
