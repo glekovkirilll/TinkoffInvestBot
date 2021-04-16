@@ -49,7 +49,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
             long chat_id = update.getMessage().getChatId();
             String str_chat_id = Long.toString(chat_id);
             messages.add(update.getMessage().getText());
-            MessageCounter++;
+            MessageCounter++; //Шаг по истории запросов
 
 
 
