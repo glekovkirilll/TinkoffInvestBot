@@ -1,5 +1,6 @@
 import lombok.SneakyThrows;
 
+import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -31,18 +32,26 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public String getBotToken() {return TOKEN;}
     public String getBotUsername() {return USERNAME;}
 
+    public ArrayList<String> messages = new ArrayList<>();
+    public Integer MessageCounter = 0;
+    public Integer TokenNumber = 0;
+
     public static Logger logger = Logger.getLogger(Application.class.toString());
 
     @SneakyThrows
     @Override
-    public void onUpdateReceived(Update update) {
+    public void onUpdateReceived(@NotNull Update update) {
         if(update.getMessage()!=null && update.getMessage().hasText()) {
+
+
+
 
             long chat_id = update.getMessage().getChatId();
             String str_chat_id = Long.toString(chat_id);
+            messages.add(update.getMessage().getText());
+            MessageCounter++;
 
 
-            //TINTOKEN = update.getMessage().getText();
 
 
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
@@ -59,9 +68,20 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             }*/
 
-            if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
+            TINTOKEN = messages.get(TokenNumber + 1);
 
-                String startMessage = "Если вы хотите узнать какие акции доступны к покупке введите число, которое будет являться страницей списка (на каждой странице по 10 акций) .\n" +
+            if (update.getMessage().getText().toString().equals("/token")) {
+                execute(new SendMessage(str_chat_id, "Введите Токен"));
+                TokenNumber = MessageCounter - 1;
+            }
+            else if (update.getMessage().getText().toString().equals("/array")) {
+                execute(new SendMessage(str_chat_id, messages.get(MessageCounter - 2)));
+
+            }
+            else if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
+
+                String startMessage = "Чтобы установить свой токен Tinkoff используйте команду /token \n" +
+                        "Если вы хотите узнать какие акции доступны к покупке введите число, которое будет являться страницей списка (на каждой странице по 10 акций) .\n" +
                         "Если вы хотите увидеть список акций в вашем портфеле напишите /status";
 
                 execute(new SendMessage(str_chat_id, startMessage));
