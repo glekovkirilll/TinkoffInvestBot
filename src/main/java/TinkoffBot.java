@@ -1,8 +1,10 @@
 import lombok.SneakyThrows;
 
+import org.checkerframework.common.reflection.qual.NewInstance;
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
@@ -10,23 +12,23 @@ import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxOpenApi;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApiFactory;
 
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executors;
-
-
-
-
-
 import javax.ws.rs.core.Application;
 import java.util.logging.Logger;
+
 
 public class TinkoffBot extends TelegramLongPollingBot {
 
     private static final String TOKEN = "1707052474:AAH0bAaVVKwHwVJ2shJCIa4Gk4qoH9-v6sA";
     private static final String USERNAME = "brok_the_bot";
 
-    private String TINTOKEN = "";
+    String userName = "admin";
+    String password = "root";
+    String connectionURL = "jdbc:mysql://localhost:3306/tinkoffbot";
 
+    private String TINTOKEN = "";
     public TinkoffBot(DefaultBotOptions options) { super(options);}
 
     public String getBotToken() {return TOKEN;}
@@ -46,10 +48,14 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
 
 
+
             long chat_id = update.getMessage().getChatId();
             String str_chat_id = Long.toString(chat_id);
+            String tokenToInsert;
             messages.add(update.getMessage().getText());
             MessageCounter++; //Шаг по истории запросов
+
+
 
 
 
@@ -58,6 +64,25 @@ public class TinkoffBot extends TelegramLongPollingBot {
             OpenApi api = null;
 
             api = factory.createOpenApiClient(Executors.newCachedThreadPool());
+
+            try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                Statement statement = connection.createStatement()){
+
+
+                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id);
+                while(resultSet.next()){
+
+                    String Token = resultSet.getString(1);
+                    TINTOKEN = Token;
+                }
+
+                System.out.println("Create");
+
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
+
 
             /*boolean sandboxMode = false;
             if(sandboxMode) {
@@ -68,11 +93,34 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             }*/
 
-            TINTOKEN = messages.get(TokenNumber + 1);
+            if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
+                TINTOKEN = messages.get(TokenNumber);
+
+                tokenToInsert = messages.get(TokenNumber);
+
+                try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                    Statement statement = connection.createStatement()){
+
+
+                    statement.executeUpdate("INSERT INTO users (chatId, Token) VALUES ('"+ str_chat_id +"', '" + tokenToInsert + "')");
+
+                    System.out.println("Create");
+
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+
+
+                execute(new SendMessage(str_chat_id, "Токен установлен"));
+
+            }
+
+
+
 
             if (update.getMessage().getText().toString().equals("/token")) {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
-                TokenNumber = MessageCounter - 1;
+                TokenNumber = MessageCounter;
             }
             else if (update.getMessage().getText().toString().equals("/array")) {
                 execute(new SendMessage(str_chat_id, messages.get(MessageCounter - 2)));
@@ -112,6 +160,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 String finalStatus = String.join(System.lineSeparator(), shortList);
 
+                TINTOKEN = "";
 
                 execute(new SendMessage(str_chat_id, finalStatus));
 
@@ -147,7 +196,6 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 execute(new SendMessage(str_chat_id, shortListStr));
             }
-
 
         }
     }
