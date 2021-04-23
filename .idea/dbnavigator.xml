@@ -26,7 +26,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="a56b46aa-8384-4ec6-9f06-22702d1bb0c5">
-        <schema name="tinkoffbot" object-types="view, constraint, dataset trigger, procedure, table, column, function, index" />
+        <schema name="tinkoffbot" object-types="index, dataset trigger, function, constraint, view, procedure, column, table" />
       </connection>
     </loaded-nodes>
   </component>
@@ -584,7 +584,7 @@
         <uncommitted-changes>
           <on-project-close value="ASK" />
           <on-disconnect value="ASK" />
-          <on-autocommit-toggle value="ASK" />
+          <on-autocommit-toggle value="COMMIT" />
         </uncommitted-changes>
         <multiple-uncommitted-changes>
           <on-commit value="ASK" />

@@ -8,6 +8,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxOpenApi;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApiFactory;
@@ -38,6 +43,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
 
+    int sandboxMode;
+
     public static Logger logger = Logger.getLogger(Application.class.toString());
 
     @SneakyThrows
@@ -46,19 +53,34 @@ public class TinkoffBot extends TelegramLongPollingBot {
         if(update.getMessage()!=null && update.getMessage().hasText()) {
 
 
-
-
-
             long chat_id = update.getMessage().getChatId();
             String str_chat_id = Long.toString(chat_id);
             String tokenToInsert;
             messages.add(update.getMessage().getText());
             MessageCounter++; //Шаг по истории запросов
+            ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+            SendMessage sendMessage = new SendMessage().setChatId(chat_id);
 
 
 
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
+            InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
+            inlineKeyboardButtonSandbox.setText("Песочница");
+            inlineKeyboardButtonSandbox.setCallbackData("Вы выбрали режим <Песочница>");
 
+            InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
+            inlineKeyboardButtonSandbox.setText("Обычный");
+            inlineKeyboardButtonSandbox.setCallbackData("Вы выбрали режим <Обычный>");
+
+            List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+            keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
+            keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
+
+            List<List<InlineKeyboardButton>> rowList= new ArrayList<>();
+            rowList.add(keyboardButtonsRow1);
+
+            inlineKeyboardMarkup.setKeyboard(rowList);
 
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
             OpenApi api = null;
@@ -69,7 +91,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 Statement statement = connection.createStatement()){
 
 
-                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id);
+                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id + " AND Mode = " + sandboxMode);
                 while(resultSet.next()){
 
                     String Token = resultSet.getString(1);
@@ -84,7 +106,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
 
 
-            /*boolean sandboxMode = false;
+            /*
             if(sandboxMode) {
                 api = factory.createSandboxOpenApiClient(Executors.newCachedThreadPool());
                 ((SandboxOpenApi) api).getSandboxContext().performRegistration(null).join();
@@ -94,7 +116,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }*/
 
             if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
-                TINTOKEN = messages.get(TokenNumber);
+                //TINTOKEN = messages.get(TokenNumber);
 
                 tokenToInsert = messages.get(TokenNumber);
 
@@ -102,7 +124,15 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     Statement statement = connection.createStatement()){
 
 
-                    statement.executeUpdate("INSERT INTO users (chatId, Token) VALUES ('"+ str_chat_id +"', '" + tokenToInsert + "')");
+
+
+                    if(sandboxMode == 1) {
+                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('" + str_chat_id + "', '" + tokenToInsert + "', 1)");
+                    }
+                    else {
+                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('"+ str_chat_id +"', '" + tokenToInsert + "', 0)");
+
+                    }
 
                     System.out.println("Create");
 
@@ -121,6 +151,13 @@ public class TinkoffBot extends TelegramLongPollingBot {
             if (update.getMessage().getText().toString().equals("/token")) {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
+            }
+            else if (update.getMessage().getText().toString().equals("/mode")) {
+                try {
+                    execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
             }
             else if (update.getMessage().getText().toString().equals("/array")) {
                 execute(new SendMessage(str_chat_id, messages.get(MessageCounter - 2)));
@@ -197,7 +234,39 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, shortListStr));
             }
 
+
+
         }
+        else if(update.hasCallbackQuery()) {
+           sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
+        }
+
+
+
+    }
+    public static SendMessage sendInlineKeyBoardMessage(long chatId) {
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
+        inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
+        inlineKeyboardButtonSandbox.setCallbackData("1");
+
+        InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
+        inlineKeyboardButtonDefault.setText("Обычный \uD83D\uDCB0");
+        inlineKeyboardButtonDefault.setCallbackData("0");
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+        keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
+        keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
+
+
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
     }
 
+
 }
+
+
