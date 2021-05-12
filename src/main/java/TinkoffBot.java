@@ -268,10 +268,17 @@ public class TinkoffBot extends TelegramLongPollingBot {
                         + "1) Зайти на сайт https://tinkoffcreditsystems.github.io/invest-openapi/swagger-ui/#/ \n\n"
                         + "2) В параметре 'Servers' выбрать 'Работа с sandbox' \n\n"
                         + "3) Нажать на кнопку 'Authorize' \n\n"
-                        + "4) Отключить 'Подтверждение сделок кодом' \n\n"
-                        + "5) Спуститься ниже и выбрать токен: 'Токен для торговли' или 'Для песочницы' \n\n"
-                        + "6) Нажать соответсвующую кнопку \n\n"
-                        + "7) Скопировать сгенерированный токен";
+                        + "4) Ввести свой токен для песочницы \n\n"
+                        + "5) Перейти к разделу 'Sandbox/Register' \n\n"
+                        + "6) Нажать кнопку 'Try it out' \n\n"
+                        + "7) Нажать кнопку 'Execute' \n\n"
+                        + "8) В разделе 'Response body' скопировать значение параметра 'brokerAccountId' \n\n"
+                        + "9) Перейти к разделу 'Sandbox/Currencies/Balance' \n\n"
+                        + "10) Нажать кнопку 'Try it out' \n\n"
+                        + "11) Ввести 'brokerAccountId' в соответсвующее поле\n\n"
+                        + "12) В форме 'Запрос на выставление баланса по валютным позициям' указать необходимую валюту и её кол-во в соответсвующих полях\n\n"
+                        + "13) Нажать кнопку 'Execute' \n\n"
+                        + "14) Теперь вы можете работать с ботом";
                 execute(new SendMessage(str_chat_id, tip));
             }
             else if(update.getMessage().getText().toString().equals("/status")) {
