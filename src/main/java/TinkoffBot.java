@@ -1,22 +1,24 @@
 import lombok.SneakyThrows;
 
-import org.checkerframework.common.reflection.qual.NewInstance;
 import org.jetbrains.annotations.NotNull;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
-
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
+
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.tinkoff.invest.openapi.OpenApi;
 import ru.tinkoff.invest.openapi.SandboxOpenApi;
+import ru.tinkoff.invest.openapi.models.orders.LimitOrder;
+import ru.tinkoff.invest.openapi.models.orders.MarketOrder;
+import ru.tinkoff.invest.openapi.models.orders.Operation;
+import ru.tinkoff.invest.openapi.models.orders.Order;
 import ru.tinkoff.invest.openapi.okhttp.OkHttpOpenApiFactory;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -34,6 +36,9 @@ public class TinkoffBot extends TelegramLongPollingBot {
     String connectionURL = "jdbc:mysql://localhost:3306/tinkoffbot";
 
     private String TINTOKEN = "";
+    private String Figi = "";
+    private Integer Lots = 0;
+    private BigDecimal Price;
     public TinkoffBot(DefaultBotOptions options) { super(options);}
 
     public String getBotToken() {return TOKEN;}
@@ -42,6 +47,14 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public ArrayList<String> messages = new ArrayList<>();
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
+    public Integer PageNumber = 0;
+    public Integer BuyNumber = 0;
+    public Integer BuyLotNumber = 0;
+    public Integer BuyPriceNumber = 0;
+    public Integer SellNumber = 0;
+    public Integer SellLotNumber = 0;
+    public Integer SellPriceNumber = 0;
+
 
     int sandboxMode;
 
@@ -61,32 +74,6 @@ public class TinkoffBot extends TelegramLongPollingBot {
             ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
             SendMessage sendMessage = new SendMessage().setChatId(chat_id);
 
-
-
-            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-
-            InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
-            inlineKeyboardButtonSandbox.setText("Песочница");
-            inlineKeyboardButtonSandbox.setCallbackData("Вы выбрали режим <Песочница>");
-
-            InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
-            inlineKeyboardButtonSandbox.setText("Обычный");
-            inlineKeyboardButtonSandbox.setCallbackData("Вы выбрали режим <Обычный>");
-
-            List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-            keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
-            keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
-
-            List<List<InlineKeyboardButton>> rowList= new ArrayList<>();
-            rowList.add(keyboardButtonsRow1);
-
-            inlineKeyboardMarkup.setKeyboard(rowList);
-
-            OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
-            OpenApi api = null;
-
-            api = factory.createOpenApiClient(Executors.newCachedThreadPool());
-
             try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
                 Statement statement = connection.createStatement()){
 
@@ -98,33 +85,32 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     TINTOKEN = Token;
                 }
 
-                System.out.println("Create");
+
 
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
 
+            OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
+            OpenApi api = null;
 
 
-            /*
-            if(sandboxMode) {
+
+            if(sandboxMode == 1) {
                 api = factory.createSandboxOpenApiClient(Executors.newCachedThreadPool());
                 ((SandboxOpenApi) api).getSandboxContext().performRegistration(null).join();
-            }//пока что не рабочее что-то
-            else {
 
-            }*/
+            }
+            else {
+                api = factory.createOpenApiClient(Executors.newCachedThreadPool());
+            }
 
             if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
-                //TINTOKEN = messages.get(TokenNumber);
 
                 tokenToInsert = messages.get(TokenNumber);
 
                 try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
                     Statement statement = connection.createStatement()){
-
-
-
 
                     if(sandboxMode == 1) {
                         statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('" + str_chat_id + "', '" + tokenToInsert + "', 1)");
@@ -134,15 +120,88 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                     }
 
-                    System.out.println("Create");
-
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
                 }
 
-
                 execute(new SendMessage(str_chat_id, "Токен установлен"));
+            }
 
+            if (PageNumber != 0 && MessageCounter == PageNumber + 1 ) {
+
+                if(Integer.parseInt(update.getMessage().getText()) > 162 || Integer.parseInt(update.getMessage().getText()) < 1) {
+                    execute(new SendMessage(str_chat_id, "Такой страницы не существует"));
+                }
+                else {
+                    ArrayList<String> brokList = new ArrayList<String>();
+
+                    api.getMarketContext().getMarketStocks().get().instruments.forEach(element -> {
+                        brokList.add(element.ticker + System.lineSeparator()
+                                + element.name + System.lineSeparator()
+                                + "FIGI: " + element.figi + System.lineSeparator()
+                                + "Валюта: " + element.currency + System.lineSeparator()
+                                + "Кол-во в лоте: " + element.lot + System.lineSeparator()
+                                + "-------------------------------------------------------------"+ System.lineSeparator());
+
+                    });
+
+
+                    Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
+
+                    String startNumber = Integer.toString(numberOfElements * 10 - 10 + 1);
+                    String endNumber = Integer.toString(numberOfElements * 10) ;
+
+                    ArrayList<String> shortList = new ArrayList<String>();
+
+                    shortList.add("Список акций");
+                    shortList.add("С " + startNumber + " по " + endNumber + System.lineSeparator());
+                    shortList.add("=============================" + System.lineSeparator());
+
+
+                    for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
+                        shortList.add(brokList.get(i));
+                    }
+
+                    String shortListStr = String.join(System.lineSeparator(), shortList);
+
+                    execute(new SendMessage(str_chat_id, shortListStr));
+                }
+
+
+            }
+
+            if (BuyNumber != 0 && MessageCounter == BuyNumber + 1 ) {
+                Figi = messages.get(BuyNumber);
+                execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
+                BuyLotNumber = MessageCounter;
+            }
+            if (BuyLotNumber != 0 && MessageCounter == BuyLotNumber + 1 ) {
+                execute(new SendMessage(str_chat_id, "Введите желаемую стоимость:"));
+                Lots = Integer.parseInt(messages.get(BuyLotNumber));
+                BuyPriceNumber = MessageCounter;
+                //api.getOrdersContext().placeMarketOrder(Figi, new MarketOrder(Lots, Operation.Buy), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
+            }
+            if (BuyPriceNumber != 0 && MessageCounter == BuyPriceNumber + 1 ) {
+                execute(new SendMessage(str_chat_id, "Покупка произведена успешно"));
+                Price = BigDecimal.valueOf(Double.valueOf(messages.get(BuyPriceNumber)));
+                api.getOrdersContext().placeLimitOrder(Figi, new LimitOrder(Lots, Operation.Buy, Price), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
+            }
+
+            if (SellNumber != 0 && MessageCounter == SellNumber + 1 ) {
+                Figi = messages.get(SellNumber);
+                execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
+                SellLotNumber = MessageCounter;
+            }
+            if (SellLotNumber != 0 && MessageCounter == SellLotNumber + 1 ) {
+                execute(new SendMessage(str_chat_id, "Введите желаемую стоимость:"));
+                Lots = Integer.parseInt(messages.get(SellLotNumber));
+                SellPriceNumber = MessageCounter;
+                //api.getOrdersContext().placeMarketOrder(Figi, new MarketOrder(Lots, Operation.Buy), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
+            }
+            if (SellPriceNumber != 0 && MessageCounter == SellPriceNumber + 1 ) {
+                execute(new SendMessage(str_chat_id, "Покупка произведена успешно"));
+                Price = BigDecimal.valueOf(Double.valueOf(messages.get(SellPriceNumber)));
+                api.getOrdersContext().placeLimitOrder(Figi, new LimitOrder(Lots, Operation.Buy, Price), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
             }
 
 
@@ -159,17 +218,61 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     e.printStackTrace();
                 }
             }
-            else if (update.getMessage().getText().toString().equals("/array")) {
-                execute(new SendMessage(str_chat_id, messages.get(MessageCounter - 2)));
-
+            else if (update.getMessage().getText().toString().equals("/list")) {
+                execute(new SendMessage(str_chat_id, "Введите номер страницы(1 - 162):"));
+                PageNumber = MessageCounter;
+            }
+            else if (update.getMessage().getText().toString().equals("/buy")) {
+                execute(new SendMessage(str_chat_id, "Что вы хотите купить(FIGI)?"));
+                BuyNumber = MessageCounter;
+            }
+            else if (update.getMessage().getText().toString().equals("/sell")) {
+                execute(new SendMessage(str_chat_id, "Что вы хотите продать(FIGI)?"));
+                SellNumber = MessageCounter;
             }
             else if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
-
-                String startMessage = "Чтобы установить свой токен Tinkoff используйте команду /token \n" +
-                        "Если вы хотите узнать какие акции доступны к покупке введите число, которое будет являться страницей списка (на каждой странице по 10 акций) .\n" +
-                        "Если вы хотите увидеть список акций в вашем портфеле напишите /status";
+                String startMessage = "Для начала выберите режим* при помощи команды /mode (По умолчанию установлен 'обычный') \n"
+                        +System.lineSeparator()
+                        + "Чтобы установить свой токен Tinkoff используйте команду /token (Чтобы узнать, как получить токен используйте команду /get_token) \n"
+                        +System.lineSeparator()
+                        + "Если вы хотите узнать какие акции доступны к покупке введите команду /list и следуйте инструкциям \n"
+                        +System.lineSeparator()
+                        + "Чтобы узнать свой баланс введите команду /balance \n"
+                        +System.lineSeparator()
+                        + "Чтобы получить список имеющихся у вас активов введите команду /status \n"
+                        +System.lineSeparator()
+                        + "Чтобы купить актив используйте команду /buy \n"
+                        + "Чтобы продать актив используйте команду /sell \n"
+                        +System.lineSeparator()
+                        + "Введите команду /help, чтобы снова получить это сообщение \n"
+                        +System.lineSeparator()
+                        +System.lineSeparator()
+                        + "*Информацию о работе с режимом 'Песочница', вы можете получить, используя команду /sandbox";
 
                 execute(new SendMessage(str_chat_id, startMessage));
+            }
+            else if(update.getMessage().getText().toString().equals("/get_token")) {
+                String tip = "Чтобы получить токен, нужно: \n\n"
+                        + "1) Зайти на сайт https://www.tinkoff.ru/invest/ \n\n"
+                        + "2) Войти в свой аккаунт \n\n"
+                        + "3) Перейти в раздел 'Настройки' \n\n"
+                        + "4) Отключить 'Подтверждение сделок кодом' \n\n"
+                        + "5) Спуститься ниже и выбрать токен: 'Токен для торговли' или 'Для песочницы' \n\n"
+                        + "6) Нажать соответсвующую кнопку \n\n"
+                        + "7) Скопировать сгенерированный токен";
+
+                execute(new SendMessage(str_chat_id, tip));
+            }
+            else if(update.getMessage().getText().toString().equals("/sandbox")) {
+                String tip = "Чтобы использовать режим 'Песочница', нужно: \n\n"
+                        + "1) Зайти на сайт https://tinkoffcreditsystems.github.io/invest-openapi/swagger-ui/#/ \n\n"
+                        + "2) В параметре 'Servers' выбрать 'Работа с sandbox' \n\n"
+                        + "3) Нажать на кнопку 'Authorize' \n\n"
+                        + "4) Отключить 'Подтверждение сделок кодом' \n\n"
+                        + "5) Спуститься ниже и выбрать токен: 'Токен для торговли' или 'Для песочницы' \n\n"
+                        + "6) Нажать соответсвующую кнопку \n\n"
+                        + "7) Скопировать сгенерированный токен";
+                execute(new SendMessage(str_chat_id, tip));
             }
             else if(update.getMessage().getText().toString().equals("/status")) {
 
@@ -178,8 +281,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 api.getPortfolioContext().getPortfolio(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().positions.forEach(element -> {
                     portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
                     portfolioStatus.add(element.name + System.lineSeparator());
-                    portfolioStatus.add("Количество: " + element.balance + System.lineSeparator());
-                    portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
+                    portfolioStatus.add("Количество: " + (element.balance).doubleValue() + System.lineSeparator());
+                    if(sandboxMode == 0) {
+                        portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
+                    }
                     portfolioStatus.add("=======================" + System.lineSeparator());
                 });
 
@@ -200,51 +305,50 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 TINTOKEN = "";
 
                 execute(new SendMessage(str_chat_id, finalStatus));
-
-
             }
-            else {
-                ArrayList<String> brokList = new ArrayList<String>();
+            else if (update.getMessage().getText().toString().equals("/balance")) {
+                ArrayList<String> portfolioStatus = new ArrayList<>();
 
-                api.getMarketContext().getMarketStocks().get().instruments.forEach(element -> {
-                    brokList.add(element.figi + " " + element.name + System.lineSeparator()) ;
+                api.getPortfolioContext().getPortfolioCurrencies(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().currencies.forEach(element -> {
+                    portfolioStatus.add("" + element.currency + ": " + (element.balance).doubleValue() + System.lineSeparator());
+                    portfolioStatus.add("=======================" + System.lineSeparator());
                 });
-
-
-                Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
-
-                String startNumber = Integer.toString(numberOfElements * 10 - 10 + 1);
-                String endNumber = Integer.toString(numberOfElements * 10) ;
 
                 ArrayList<String> shortList = new ArrayList<String>();
 
-                shortList.add("Список акций");
-                shortList.add("С " + startNumber + " по " + endNumber + System.lineSeparator());
-                shortList.add("=============================" + System.lineSeparator());
+                String numberofShares = Integer.toString(portfolioStatus.size() / 5) ;
 
+                shortList.add("ВАШ БАЛАНС");
+                shortList.add("На данный момент у вас на счету:       " + System.lineSeparator());
+                shortList.add("=======================" + System.lineSeparator());
 
-                for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
-                    shortList.add(brokList.get(i));
-                }
+                String PortfolioStatusList = String.join(System.lineSeparator(), portfolioStatus);
 
+                shortList.add(PortfolioStatusList);
 
-                String shortListStr = String.join(System.lineSeparator(), shortList);
+                String finalStatus = String.join(System.lineSeparator(), shortList);
 
+                TINTOKEN = "";
 
-                execute(new SendMessage(str_chat_id, shortListStr));
+                execute(new SendMessage(str_chat_id, finalStatus));
             }
-
-
-
         }
         else if(update.hasCallbackQuery()) {
-           sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
+            sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
+
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+            if (sandboxMode == 1) {
+                execute(new SendMessage(chatId, "Выбран режим песочницы \uD83C\uDFDD\uFE0F"));
+            }else if (sandboxMode == 0) {
+                execute(new SendMessage(chatId, "Выбран обычный режим торговли \uD83D\uDCB0"));
+            }
+            
         }
-
-
-
     }
     public static SendMessage sendInlineKeyBoardMessage(long chatId) {
+
+
         InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
         InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
         inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
@@ -265,8 +369,4 @@ public class TinkoffBot extends TelegramLongPollingBot {
         inlineKeyboardMarkup.setKeyboard(rowList);
         return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
     }
-
-
 }
-
-
