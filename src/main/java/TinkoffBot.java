@@ -190,6 +190,38 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Введите номер страницы(1 - 162):"));
                 PageNumber = MessageCounter;
             }
+            else if(update.getMessage().getText().toString().equals("/status")) {
+
+                ArrayList<String> portfolioStatus = new ArrayList<>();
+
+                api.getPortfolioContext().getPortfolio(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().positions.forEach(element -> {
+                    portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
+                    portfolioStatus.add(element.name + System.lineSeparator());
+                    portfolioStatus.add("Количество: " + (element.balance).doubleValue() + System.lineSeparator());
+                    if(sandboxMode == 0) {
+                        portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
+                    }
+                    portfolioStatus.add("=======================" + System.lineSeparator());
+                });
+
+                ArrayList<String> shortList = new ArrayList<String>();
+
+                String numberofShares = Integer.toString(portfolioStatus.size() / 5) ;
+
+                shortList.add("ВАШ ПОРТФЕЛЬ");
+                shortList.add("На данный момент у вас в портфеле " + numberofShares + " акций(я/и):" + System.lineSeparator());
+                shortList.add("=======================" + System.lineSeparator());
+
+                String PortfolioStatusList = String.join(System.lineSeparator(), portfolioStatus);
+
+                shortList.add(PortfolioStatusList);
+
+                String finalStatus = String.join(System.lineSeparator(), shortList);
+
+                TINTOKEN = "";
+
+                execute(new SendMessage(str_chat_id, finalStatus));
+            }
 
 
         }
