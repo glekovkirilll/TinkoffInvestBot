@@ -144,9 +144,9 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
                     portfolioStatus.add(element.name + System.lineSeparator());
                     portfolioStatus.add("Количество: " + (element.balance).doubleValue() + System.lineSeparator());
-
-                    portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
-
+                    if(sandboxMode == 0) {
+                        portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
+                    }
                     portfolioStatus.add("=======================" + System.lineSeparator());
 
                 });
