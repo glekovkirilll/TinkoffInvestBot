@@ -48,24 +48,18 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public String getBotUsername() {
         return USERNAME;
     }
-
+    public Integer SellNumber = 0;
     public ArrayList<String> messages = new ArrayList<>();
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
     public Integer PageNumber = 0;
-
-    public Integer BuyNumber = 0;
-    public Integer BuyLotNumber = 0;
+    public Integer SellLotNumber = 0;
 
 
 
+    public String Figi;
+    public Integer Lots;
 
-
-
-    
-
-    private String Figi;
-    private Integer Lots;
 
     int sandboxMode;
 
@@ -183,15 +177,37 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
 
-            if (BuyNumber != 0 && MessageCounter == BuyNumber + 1 ) {
-                Figi = messages.get(BuyNumber);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+
+
+            if (SellNumber != 0 && MessageCounter == SellNumber + 1 ) {
+                Figi = messages.get(SellNumber);
                 execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
-                BuyLotNumber = MessageCounter;
+                SellLotNumber = MessageCounter;
             }
-            if (BuyLotNumber != 0 && MessageCounter == BuyLotNumber + 1 ) {
-                execute(new SendMessage(str_chat_id, "Покупка завершена"));
-                Lots = Integer.parseInt(messages.get(BuyLotNumber));
-                api.getOrdersContext().placeMarketOrder(Figi, new MarketOrder(Lots, Operation.Buy), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
+            if (SellLotNumber != 0 && MessageCounter == SellLotNumber + 1 ) {
+                execute(new SendMessage(str_chat_id, "Продажа завершена"));
+                Lots = Integer.parseInt(messages.get(SellLotNumber));
+                api.getOrdersContext().placeMarketOrder(Figi, new MarketOrder(Lots, Operation.Sell), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
             }
 
 
@@ -273,9 +289,17 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 execute(new SendMessage(str_chat_id, finalStatus));
             }
-            else if (update.getMessage().getText().toString().equals("/buy")) {
-                execute(new SendMessage(str_chat_id, "Что вы хотите купить(FIGI)?"));
-                BuyNumber = MessageCounter;
+
+
+
+
+
+
+
+
+            else if (update.getMessage().getText().toString().equals("/sell")) {
+                execute(new SendMessage(str_chat_id, "Что вы хотите продать(FIGI)?"));
+                SellNumber = MessageCounter;
             }
 
 
