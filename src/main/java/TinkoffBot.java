@@ -136,6 +136,28 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
             }
+            else if (update.getMessage().getText().toString().equals("/balance")) {
+                ArrayList<String> walletStatus = new ArrayList<>();
+
+                api.getPortfolioContext().getPortfolioCurrencies(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().currencies.forEach(element -> {
+                    walletStatus.add("" + element.currency + ": " + (element.balance).doubleValue() + System.lineSeparator());
+                    walletStatus.add("=======================" + System.lineSeparator());
+                });
+
+                ArrayList<String> shortList = new ArrayList<String>();
+
+
+
+                String walletStatusList = String.join(System.lineSeparator(), walletStatus);
+
+                shortList.add(walletStatusList);
+
+                String finalStatus = String.join(System.lineSeparator(), shortList);
+
+                TINTOKEN = "";
+
+                execute(new SendMessage(str_chat_id, finalStatus));
+            }
 
 
         }
@@ -151,6 +173,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
         }
+
     }
     public static SendMessage sendInlineKeyBoardMessage(long chatId) {
 
