@@ -315,6 +315,18 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Что вы хотите продать(FIGI)?"));
                 SellNumber = MessageCounter;
             }
+            else if(update.getMessage().getText().toString().equals("/get_token")) {
+                String tip = "Чтобы получить токен, нужно: \n\n"
+                        + "1) Зайти на сайт https://www.tinkoff.ru/invest/ \n\n"
+                        + "2) Войти в свой аккаунт \n\n"
+                        + "3) Перейти в раздел 'Настройки' \n\n"
+                        + "4) Отключить 'Подтверждение сделок кодом' \n\n"
+                        + "5) Спуститься ниже и выбрать токен: 'Токен для торговли' или 'Для песочницы' \n\n"
+                        + "6) Нажать соответсвующую кнопку \n\n"
+                        + "7) Скопировать сгенерированный токен";
+
+                execute(new SendMessage(str_chat_id, tip));
+            }
         }
         else if(update.hasCallbackQuery()) {
             sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
