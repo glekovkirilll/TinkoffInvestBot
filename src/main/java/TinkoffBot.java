@@ -33,6 +33,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
     private String TINTOKEN = "";
 
+    String userName = "admin";
+    String password = "root";
+    String connectionURL = "jdbc:mysql://localhost:3306/tinkoffbot";
+
     public TinkoffBot(DefaultBotOptions options) {
         super(options);
     }
@@ -71,6 +75,15 @@ public class TinkoffBot extends TelegramLongPollingBot {
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
             OpenApi api = null;
 
+            try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                Statement statement = connection.createStatement()){
+
+            }
+            catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
+
 
             if (sandboxMode == 1) {
                 api = factory.createSandboxOpenApiClient(Executors.newCachedThreadPool());
@@ -81,10 +94,25 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
 
+
             if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
 
                 tokenToInsert = messages.get(TokenNumber);
-                TINTOKEN = tokenToInsert;
+
+                try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                    Statement statement = connection.createStatement()){
+
+                    if(sandboxMode == 1) {
+                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('" + str_chat_id + "', '" + tokenToInsert + "', 1)");
+                    }
+                    else {
+                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('"+ str_chat_id +"', '" + tokenToInsert + "', 0)");
+
+                    }
+
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
 
                 execute(new SendMessage(str_chat_id, "Токен установлен"));
             }
@@ -103,10 +131,6 @@ public class TinkoffBot extends TelegramLongPollingBot {
                         + "Введите команду /help, чтобы снова получить это сообщение \n";
 
                 execute(new SendMessage(str_chat_id, startMessage));
-            }
-            else if (update.getMessage().getText().toString().equals("/token")) {
-                execute(new SendMessage(str_chat_id, "Введите Токен"));
-                TokenNumber = MessageCounter;
             }
 
 
