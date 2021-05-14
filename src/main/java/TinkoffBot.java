@@ -132,6 +132,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 execute(new SendMessage(str_chat_id, startMessage));
             }
+            else if (update.getMessage().getText().toString().equals("/token")) {
+                execute(new SendMessage(str_chat_id, "Введите Токен"));
+                TokenNumber = MessageCounter;
+            }
 
 
         }
