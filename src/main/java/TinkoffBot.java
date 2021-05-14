@@ -225,7 +225,21 @@ public class TinkoffBot extends TelegramLongPollingBot {
             else if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
                 String startMessage = "Для начала выберите режим* при помощи команды /mode (По умолчанию установлен 'обычный') \n"
                         +System.lineSeparator()
-                        + "Введите команду /help, чтобы снова получить это сообщение \n";
+                        + "Чтобы установить свой токен Tinkoff используйте команду /token (Чтобы узнать, как получить токен используйте команду /get_token) \n"
+                        +System.lineSeparator()
+                        + "Если вы хотите узнать какие акции доступны к покупке введите команду /list и следуйте инструкциям \n"
+                        +System.lineSeparator()
+                        + "Чтобы узнать свой баланс введите команду /balance \n"
+                        +System.lineSeparator()
+                        + "Чтобы получить список имеющихся у вас активов введите команду /status \n"
+                        +System.lineSeparator()
+                        + "Чтобы купить актив используйте команду /buy \n"
+                        + "Чтобы продать актив используйте команду /sell \n"
+                        +System.lineSeparator()
+                        + "Введите команду /help, чтобы снова получить это сообщение \n"
+                        +System.lineSeparator()
+                        +System.lineSeparator()
+                        + "*Информацию о работе с режимом 'Песочница', вы можете получить, используя команду /sandbox";
 
                 execute(new SendMessage(str_chat_id, startMessage));
             }
