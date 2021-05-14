@@ -53,6 +53,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
     public Integer PageNumber = 0;
+    public Integer BuyNumber = 0;
 
     int sandboxMode;
 
@@ -247,6 +248,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 TINTOKEN = "";
 
                 execute(new SendMessage(str_chat_id, finalStatus));
+            }
+            else if (update.getMessage().getText().toString().equals("/buy")) {
+                execute(new SendMessage(str_chat_id, "Что вы хотите купить(FIGI)?"));
+                BuyNumber = MessageCounter;
             }
 
 
