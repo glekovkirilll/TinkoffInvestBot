@@ -80,13 +80,20 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 api = factory.createOpenApiClient(Executors.newCachedThreadPool());
             }
 
-            
+
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
                     execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
+            }
+            else if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
+                String startMessage = "Для начала выберите режим* при помощи команды /mode (По умолчанию установлен 'обычный') \n"
+                        +System.lineSeparator()
+                        + "Введите команду /help, чтобы снова получить это сообщение \n";
+
+                execute(new SendMessage(str_chat_id, startMessage));
             }
 
 
