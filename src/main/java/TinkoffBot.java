@@ -52,6 +52,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public ArrayList<String> messages = new ArrayList<>();
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
+    public Integer PageNumber = 0;
 
     int sandboxMode;
 
@@ -77,8 +78,14 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
                 Statement statement = connection.createStatement()){
+                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id + " AND Mode = " + sandboxMode);
+                while(resultSet.next()){
 
+                    String Token = resultSet.getString(1);
+                    TINTOKEN = Token;
+                }
             }
+            //smth
             catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
@@ -135,6 +142,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
             else if (update.getMessage().getText().toString().equals("/token")) {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
+            }
+            else if (update.getMessage().getText().toString().equals("/list")) {
+                execute(new SendMessage(str_chat_id, "Введите номер страницы(1 - 162):"));
+                PageNumber = MessageCounter;
             }
 
 
