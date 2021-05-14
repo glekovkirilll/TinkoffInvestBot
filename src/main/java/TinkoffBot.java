@@ -80,8 +80,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 api = factory.createOpenApiClient(Executors.newCachedThreadPool());
             }
 
-<<<<<<< Updated upstream
-=======
+
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
                     execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
@@ -90,7 +89,18 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 }
             }
 
->>>>>>> Stashed changes
+
+        }
+        else if(update.hasCallbackQuery()) {
+            sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
+
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+            if (sandboxMode == 1) {
+                execute(new SendMessage(chatId, "Выбран режим песочницы \uD83C\uDFDD\uFE0F"));
+            }else if (sandboxMode == 0) {
+                execute(new SendMessage(chatId, "Выбран обычный режим торговли \uD83D\uDCB0"));
+            }
 
         }
     }
