@@ -85,6 +85,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     TINTOKEN = Token;
                 }
             }
+            //smth
             catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
