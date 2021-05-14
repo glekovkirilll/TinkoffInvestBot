@@ -83,4 +83,27 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
         }
     }
+    public static SendMessage sendInlineKeyBoardMessage(long chatId) {
+
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
+        inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
+        inlineKeyboardButtonSandbox.setCallbackData("1");
+
+        InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
+        inlineKeyboardButtonDefault.setText("Обычный \uD83D\uDCB0");
+        inlineKeyboardButtonDefault.setCallbackData("0");
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+        keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
+        keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
+
+
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
+    }
 }
