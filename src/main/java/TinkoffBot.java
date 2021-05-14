@@ -85,6 +85,50 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
 
+            if (update.getMessage().getText().toString().equals("/mode")) {
+                try {
+                    execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
         }
+        else if(update.hasCallbackQuery()) {
+            sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
+
+            Long chatId = update.getCallbackQuery().getMessage().getChatId();
+
+            if (sandboxMode == 1) {
+                execute(new SendMessage(chatId, "Выбран режим песочницы \uD83C\uDFDD\uFE0F"));
+            }else if (sandboxMode == 0) {
+                execute(new SendMessage(chatId, "Выбран обычный режим торговли \uD83D\uDCB0"));
+            }
+
+        }
+    }
+    public static SendMessage sendInlineKeyBoardMessage(long chatId) {
+
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
+        inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
+        inlineKeyboardButtonSandbox.setCallbackData("1");
+
+        InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
+        inlineKeyboardButtonDefault.setText("Обычный \uD83D\uDCB0");
+        inlineKeyboardButtonDefault.setCallbackData("0");
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+        keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
+        keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
+
+
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+        return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
     }
 }
