@@ -52,6 +52,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public ArrayList<String> messages = new ArrayList<>();
     public Integer MessageCounter = 0;
     public Integer TokenNumber = 0;
+    public Integer PageNumber = 0;
 
     int sandboxMode;
 
@@ -77,6 +78,12 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
                 Statement statement = connection.createStatement()){
+                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id + " AND Mode = " + sandboxMode);
+                while(resultSet.next()){
+
+                    String Token = resultSet.getString(1);
+                    TINTOKEN = Token;
+                }
 
             }
             catch (SQLException throwables) {
@@ -117,6 +124,49 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Токен установлен"));
             }
 
+            if (PageNumber != 0 && MessageCounter == PageNumber + 1 ) {
+
+                if(Integer.parseInt(update.getMessage().getText()) > 162 || Integer.parseInt(update.getMessage().getText()) < 1) {
+                    execute(new SendMessage(str_chat_id, "Такой страницы не существует"));
+                }
+                else {
+                    ArrayList<String> brokList = new ArrayList<String>();
+
+                    api.getMarketContext().getMarketStocks().get().instruments.forEach(element -> {
+                        brokList.add(element.ticker + System.lineSeparator()
+                                + element.name + System.lineSeparator()
+                                + "FIGI: " + element.figi + System.lineSeparator()
+                                + "Валюта: " + element.currency + System.lineSeparator()
+                                + "Кол-во в лоте: " + element.lot + System.lineSeparator()
+                                + "-------------------------------------------------------------"+ System.lineSeparator());
+
+                    });
+
+
+                    Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
+
+                    String startNumber = Integer.toString(numberOfElements * 10 - 10 + 1);
+                    String endNumber = Integer.toString(numberOfElements * 10) ;
+
+                    ArrayList<String> shortList = new ArrayList<String>();
+
+                    shortList.add("Список акций");
+                    shortList.add("С " + startNumber + " по " + endNumber + System.lineSeparator());
+                    shortList.add("=============================" + System.lineSeparator());
+
+
+                    for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
+                        shortList.add(brokList.get(i));
+                    }
+
+                    String shortListStr = String.join(System.lineSeparator(), shortList);
+
+                    execute(new SendMessage(str_chat_id, shortListStr));
+                }
+
+
+            }
+
 
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
@@ -135,6 +185,42 @@ public class TinkoffBot extends TelegramLongPollingBot {
             else if (update.getMessage().getText().toString().equals("/token")) {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
+            }
+            else if (update.getMessage().getText().toString().equals("/list")) {
+                execute(new SendMessage(str_chat_id, "Введите номер страницы(1 - 162):"));
+                PageNumber = MessageCounter;
+            }
+            else if(update.getMessage().getText().toString().equals("/status")) {
+
+                ArrayList<String> portfolioStatus = new ArrayList<>();
+
+                api.getPortfolioContext().getPortfolio(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().positions.forEach(element -> {
+                    portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
+                    portfolioStatus.add(element.name + System.lineSeparator());
+                    portfolioStatus.add("Количество: " + (element.balance).doubleValue() + System.lineSeparator());
+                    if(sandboxMode == 0) {
+                        portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
+                    }
+                    portfolioStatus.add("=======================" + System.lineSeparator());
+                });
+
+                ArrayList<String> shortList = new ArrayList<String>();
+
+                String numberofShares = Integer.toString(portfolioStatus.size() / 5) ;
+
+                shortList.add("ВАШ ПОРТФЕЛЬ");
+                shortList.add("На данный момент у вас в портфеле " + numberofShares + " акций(я/и):" + System.lineSeparator());
+                shortList.add("=======================" + System.lineSeparator());
+
+                String PortfolioStatusList = String.join(System.lineSeparator(), portfolioStatus);
+
+                shortList.add(PortfolioStatusList);
+
+                String finalStatus = String.join(System.lineSeparator(), shortList);
+
+                TINTOKEN = "";
+
+                execute(new SendMessage(str_chat_id, finalStatus));
             }
             else if (update.getMessage().getText().toString().equals("/balance")) {
                 ArrayList<String> walletStatus = new ArrayList<>();
