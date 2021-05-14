@@ -80,11 +80,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 api = factory.createOpenApiClient(Executors.newCachedThreadPool());
             }
 
-            if (update.getMessage().getText().toString().equals("/mode")) {
-                execute(new SendMessage(str_chat_id, "Выберите режим"));
-            }
-
-
+            
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
                     execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));

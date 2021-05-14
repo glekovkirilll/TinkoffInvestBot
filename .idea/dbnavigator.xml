@@ -26,7 +26,7 @@
     <show-object-properties value="true" />
     <loaded-nodes>
       <connection connection-id="a56b46aa-8384-4ec6-9f06-22702d1bb0c5">
-        <schema name="tinkoffbot" object-types="index, table, column, dataset trigger, constraint" />
+        <schema name="tinkoffbot" object-types="table, index, constraint, procedure, view, dataset trigger, function, column" />
       </connection>
     </loaded-nodes>
   </component>
