@@ -84,12 +84,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     TINTOKEN = Token;
                 }
 
-                ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id + " AND Mode = " + sandboxMode);
-                while(resultSet.next()){
-
-                    String Token = resultSet.getString(1);
-                    TINTOKEN = Token;
-                }
+                
             }
             //smth
             catch (SQLException throwables) {
