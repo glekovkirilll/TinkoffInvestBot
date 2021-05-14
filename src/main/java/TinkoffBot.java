@@ -169,7 +169,6 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             }
 
-
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
                     execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
