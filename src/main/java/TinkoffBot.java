@@ -33,6 +33,10 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
     private String TINTOKEN = "";
 
+    String userName = "admin";
+    String password = "root";
+    String connectionURL = "jdbc:mysql://localhost:3306/tinkoffbot";
+
     public TinkoffBot(DefaultBotOptions options) {
         super(options);
     }
@@ -70,6 +74,15 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
             OpenApi api = null;
+
+            try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                Statement statement = connection.createStatement()){
+
+            }
+            catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+
 
 
             if (sandboxMode == 1) {
