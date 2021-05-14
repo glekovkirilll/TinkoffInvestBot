@@ -80,6 +80,17 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 api = factory.createOpenApiClient(Executors.newCachedThreadPool());
             }
 
+<<<<<<< Updated upstream
+=======
+            if (update.getMessage().getText().toString().equals("/mode")) {
+                try {
+                    execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
+
+>>>>>>> Stashed changes
 
         }
     }
