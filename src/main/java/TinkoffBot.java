@@ -146,7 +146,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 ArrayList<String> shortList = new ArrayList<String>();
 
-
+                shortList.add("ВАШ БАЛАНС");
+                
 
                 String walletStatusList = String.join(System.lineSeparator(), walletStatus);
 
