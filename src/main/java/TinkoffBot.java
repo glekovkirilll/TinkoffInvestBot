@@ -73,8 +73,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
             SendMessage sendMessage = new SendMessage().setChatId(chat_id);
 
 
-            OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
-            OpenApi api = null;
+
 
             try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
                 Statement statement = connection.createStatement()){
@@ -89,6 +88,9 @@ public class TinkoffBot extends TelegramLongPollingBot {
             catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
+
+            OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
+            OpenApi api = null;
 
 
 
