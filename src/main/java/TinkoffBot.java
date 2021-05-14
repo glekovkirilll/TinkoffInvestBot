@@ -196,6 +196,9 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
 
 
+            
+
+
             if (SellNumber != 0 && MessageCounter == SellNumber + 1 ) {
                 Figi = messages.get(SellNumber);
                 execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
