@@ -81,6 +81,15 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
 
+            if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
+
+                tokenToInsert = messages.get(TokenNumber);
+                TINTOKEN = tokenToInsert;
+
+                execute(new SendMessage(str_chat_id, "Токен установлен"));
+            }
+
+
             if (update.getMessage().getText().toString().equals("/mode")) {
                 try {
                     execute(sendInlineKeyBoardMessage(update.getMessage().getChatId()));
