@@ -136,6 +136,30 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
             }
+            else if(update.getMessage().getText().toString().equals("/status")) {
+
+                ArrayList<String> portfolioStatus = new ArrayList<>();
+
+                api.getPortfolioContext().getPortfolio(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().positions.forEach(element -> {
+                    portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
+                    portfolioStatus.add(element.name + System.lineSeparator());
+
+                });
+
+                ArrayList<String> shortList = new ArrayList<String>();
+
+                
+
+                String PortfolioStatusList = String.join(System.lineSeparator(), portfolioStatus);
+
+                shortList.add(PortfolioStatusList);
+
+                String finalStatus = String.join(System.lineSeparator(), shortList);
+
+                TINTOKEN = "";
+
+                execute(new SendMessage(str_chat_id, finalStatus));
+            }
 
 
         }
