@@ -6,7 +6,6 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -66,8 +65,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public Integer Lots;
     public BigDecimal Price;
 
-
-    int sandboxMode;
+    int sandboxMode = 1;
 
     public static Logger logger = Logger.getLogger(Application.class.toString());
 
@@ -76,35 +74,29 @@ public class TinkoffBot extends TelegramLongPollingBot {
     public void onUpdateReceived(@NotNull Update update) {
         if (update.getMessage() != null && update.getMessage().hasText()) {
 
-
             long chat_id = update.getMessage().getChatId();
             String str_chat_id = Long.toString(chat_id);
             String tokenToInsert;
             messages.add(update.getMessage().getText());
             MessageCounter++; //Шаг по истории запросов
-            ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-            SendMessage sendMessage = new SendMessage().setChatId(chat_id);
 
 
-
-
-            try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
-                Statement statement = connection.createStatement()){
+            try (Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                 Statement statement = connection.createStatement()) {
                 ResultSet resultSet = statement.executeQuery("SELECT Token FROM users WHERE chatId =" + str_chat_id + " AND Mode = " + sandboxMode);
-                while(resultSet.next()){
+                while (resultSet.next()) {
 
                     String Token = resultSet.getString(1);
                     TINTOKEN = Token;
                 }
 
-            }
-            catch (SQLException throwables) {
+            } catch (SQLException throwables) {
                 throwables.printStackTrace();
             }
 
+
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
             OpenApi api = null;
-
 
 
             if (sandboxMode == 1) {
@@ -116,19 +108,17 @@ public class TinkoffBot extends TelegramLongPollingBot {
             }
 
 
-
-            if (TokenNumber != 0 && MessageCounter == TokenNumber + 1 ) {
+            if (TokenNumber != 0 && MessageCounter == TokenNumber + 1) {
 
                 tokenToInsert = messages.get(TokenNumber);
 
-                try(Connection connection = DriverManager.getConnection(connectionURL, userName, password);
-                    Statement statement = connection.createStatement()){
+                try (Connection connection = DriverManager.getConnection(connectionURL, userName, password);
+                     Statement statement = connection.createStatement()) {
 
-                    if(sandboxMode == 1) {
+                    if (sandboxMode == 1) {
                         statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('" + str_chat_id + "', '" + tokenToInsert + "', 1)");
-                    }
-                    else {
-                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('"+ str_chat_id +"', '" + tokenToInsert + "', 0)");
+                    } else {
+                        statement.executeUpdate("INSERT INTO users (chatId, Token, Mode) VALUES ('" + str_chat_id + "', '" + tokenToInsert + "', 0)");
 
                     }
 
@@ -139,12 +129,13 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 execute(new SendMessage(str_chat_id, "Токен установлен"));
             }
 
-            if (PageNumber != 0 && MessageCounter == PageNumber + 1 ) {
 
-                if(Integer.parseInt(update.getMessage().getText()) > 162 || Integer.parseInt(update.getMessage().getText()) < 1) {
+            if (PageNumber != 0 && MessageCounter == PageNumber + 1) {
+
+                if (Integer.parseInt(update.getMessage().getText()) > 162 || Integer.parseInt(update.getMessage().getText()) < 1) {
                     execute(new SendMessage(str_chat_id, "Такой страницы не существует"));
-                }
-                else {
+
+                } else {
                     ArrayList<String> brokList = new ArrayList<String>();
 
                     api.getMarketContext().getMarketStocks().get().instruments.forEach(element -> {
@@ -153,15 +144,14 @@ public class TinkoffBot extends TelegramLongPollingBot {
                                 + "FIGI: " + element.figi + System.lineSeparator()
                                 + "Валюта: " + element.currency + System.lineSeparator()
                                 + "Кол-во в лоте: " + element.lot + System.lineSeparator()
-                                + "-------------------------------------------------------------"+ System.lineSeparator());
+                                + "-------------------------------------------------------------" + System.lineSeparator());
 
                     });
-
 
                     Integer numberOfElements = Integer.parseInt(update.getMessage().getText());
 
                     String startNumber = Integer.toString(numberOfElements * 10 - 10 + 1);
-                    String endNumber = Integer.toString(numberOfElements * 10) ;
+                    String endNumber = Integer.toString(numberOfElements * 10);
 
                     ArrayList<String> shortList = new ArrayList<String>();
 
@@ -169,8 +159,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     shortList.add("С " + startNumber + " по " + endNumber + System.lineSeparator());
                     shortList.add("=============================" + System.lineSeparator());
 
-
-                    for(int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
+                    for (int i = numberOfElements * 10 - 10; i <= numberOfElements * 10 - 1; i++) {
                         shortList.add(brokList.get(i));
                     }
 
@@ -180,35 +169,38 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 }
 
 
-            }if (BuyNumber != 0 && MessageCounter == BuyNumber + 1 ) {
+            }
+
+
+            if (BuyNumber != 0 && MessageCounter == BuyNumber + 1) {
                 Figi = messages.get(BuyNumber);
                 execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
                 BuyLotNumber = MessageCounter;
             }
-            if (BuyLotNumber != 0 && MessageCounter == BuyLotNumber + 1 ) {
+            if (BuyLotNumber != 0 && MessageCounter == BuyLotNumber + 1) {
                 execute(new SendMessage(str_chat_id, "Введите желаемую стоимость:"));
                 Lots = Integer.parseInt(messages.get(BuyLotNumber));
                 BuyPriceNumber = MessageCounter;
             }
-            if (BuyPriceNumber != 0 && MessageCounter == BuyPriceNumber + 1 ) {
+            if (BuyPriceNumber != 0 && MessageCounter == BuyPriceNumber + 1) {
                 execute(new SendMessage(str_chat_id, "Покупка произведена успешно"));
                 Price = BigDecimal.valueOf(Double.valueOf(messages.get(BuyPriceNumber)));
                 api.getOrdersContext().placeLimitOrder(Figi, new LimitOrder(Lots, Operation.Buy, Price), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
             }
 
 
-            if (SellNumber != 0 && MessageCounter == SellNumber + 1 ) {
+            if (SellNumber != 0 && MessageCounter == SellNumber + 1) {
                 Figi = messages.get(SellNumber);
                 execute(new SendMessage(str_chat_id, "Введи кол-во лотов:"));
                 SellLotNumber = MessageCounter;
             }
-            if (SellLotNumber != 0 && MessageCounter == SellLotNumber + 1 ) {
+            if (SellLotNumber != 0 && MessageCounter == SellLotNumber + 1) {
                 execute(new SendMessage(str_chat_id, "Введите желаемую стоимость:"));
                 Lots = Integer.parseInt(messages.get(SellLotNumber));
                 SellPriceNumber = MessageCounter;
                 //api.getOrdersContext().placeMarketOrder(Figi, new MarketOrder(Lots, Operation.Buy), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
             }
-            if (SellPriceNumber != 0 && MessageCounter == SellPriceNumber + 1 ) {
+            if (SellPriceNumber != 0 && MessageCounter == SellPriceNumber + 1) {
                 execute(new SendMessage(str_chat_id, "Продажа произведена успешно"));
                 Price = BigDecimal.valueOf(Double.valueOf(messages.get(SellPriceNumber)));
                 api.getOrdersContext().placeLimitOrder(Figi, new LimitOrder(Lots, Operation.Sell, Price), api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get();
@@ -221,37 +213,37 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 } catch (TelegramApiException e) {
                     e.printStackTrace();
                 }
-            }
-            else if(update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
-                String startMessage = "Для начала выберите режим* при помощи команды /mode (По умолчанию установлен 'обычный') \n"
-                        +System.lineSeparator()
+
+            } else if (update.getMessage().getText().toString().equals("/start") || update.getMessage().getText().toString().equals("/help")) {
+                String startMessage = "Для начала выберите режим* при помощи команды /mode (По умолчанию установлен 'режим песочницы') \n"
+                        + System.lineSeparator()
                         + "Чтобы установить свой токен Tinkoff используйте команду /token (Чтобы узнать, как получить токен используйте команду /get_token) \n"
-                        +System.lineSeparator()
+                        + System.lineSeparator()
                         + "Если вы хотите узнать какие акции доступны к покупке введите команду /list и следуйте инструкциям \n"
-                        +System.lineSeparator()
+                        + System.lineSeparator()
                         + "Чтобы узнать свой баланс введите команду /balance \n"
-                        +System.lineSeparator()
+                        + System.lineSeparator()
                         + "Чтобы получить список имеющихся у вас активов введите команду /status \n"
-                        +System.lineSeparator()
+                        + System.lineSeparator()
                         + "Чтобы купить актив используйте команду /buy \n"
                         + "Чтобы продать актив используйте команду /sell \n"
-                        +System.lineSeparator()
+                        + System.lineSeparator()
                         + "Введите команду /help, чтобы снова получить это сообщение \n"
-                        +System.lineSeparator()
-                        +System.lineSeparator()
+                        + System.lineSeparator()
+                        + System.lineSeparator()
                         + "*Информацию о работе с режимом 'Песочница', вы можете получить, используя команду /sandbox";
 
                 execute(new SendMessage(str_chat_id, startMessage));
-            }
-            else if (update.getMessage().getText().toString().equals("/token")) {
+
+            } else if (update.getMessage().getText().toString().equals("/token")) {
                 execute(new SendMessage(str_chat_id, "Введите Токен"));
                 TokenNumber = MessageCounter;
-            }
-            else if (update.getMessage().getText().toString().equals("/list")) {
+
+            } else if (update.getMessage().getText().toString().equals("/list")) {
                 execute(new SendMessage(str_chat_id, "Введите номер страницы(1 - 162):"));
                 PageNumber = MessageCounter;
-            }
-            else if(update.getMessage().getText().toString().equals("/status")) {
+
+            } else if (update.getMessage().getText().toString().equals("/status")) {
 
                 ArrayList<String> portfolioStatus = new ArrayList<>();
 
@@ -259,7 +251,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
                     portfolioStatus.add("Figi: " + element.figi + System.lineSeparator());
                     portfolioStatus.add(element.name + System.lineSeparator());
                     portfolioStatus.add("Количество: " + (element.balance).doubleValue() + System.lineSeparator());
-                    if(sandboxMode == 0) {
+                    if (sandboxMode == 0) {
                         portfolioStatus.add(element.averagePositionPrice + System.lineSeparator());
                     }
                     portfolioStatus.add("=======================" + System.lineSeparator());
@@ -267,7 +259,7 @@ public class TinkoffBot extends TelegramLongPollingBot {
 
                 ArrayList<String> shortList = new ArrayList<String>();
 
-                String numberofShares = Integer.toString(portfolioStatus.size() / 5) ;
+                String numberofShares = Integer.toString(portfolioStatus.size() / 5);
 
                 shortList.add("ВАШ ПОРТФЕЛЬ");
                 shortList.add("На данный момент у вас в портфеле " + numberofShares + " акций(я/и):" + System.lineSeparator());
@@ -282,8 +274,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 TINTOKEN = "";
 
                 execute(new SendMessage(str_chat_id, finalStatus));
-            }
-            else if (update.getMessage().getText().toString().equals("/balance")) {
+
+            } else if (update.getMessage().getText().toString().equals("/balance")) {
                 ArrayList<String> walletStatus = new ArrayList<>();
 
                 api.getPortfolioContext().getPortfolioCurrencies(api.getUserContext().getAccounts().get().accounts.get(0).brokerAccountId).get().currencies.forEach(element -> {
@@ -306,16 +298,16 @@ public class TinkoffBot extends TelegramLongPollingBot {
                 TINTOKEN = "";
 
                 execute(new SendMessage(str_chat_id, finalStatus));
-            }
-            else if (update.getMessage().getText().toString().equals("/buy")) {
+
+            } else if (update.getMessage().getText().toString().equals("/buy")) {
                 execute(new SendMessage(str_chat_id, "Что вы хотите купить(FIGI)?"));
                 BuyNumber = MessageCounter;
-            }
-            else if (update.getMessage().getText().toString().equals("/sell")) {
+
+            } else if (update.getMessage().getText().toString().equals("/sell")) {
                 execute(new SendMessage(str_chat_id, "Что вы хотите продать(FIGI)?"));
                 SellNumber = MessageCounter;
-            }
-            else if(update.getMessage().getText().toString().equals("/get_token")) {
+
+            } else if (update.getMessage().getText().toString().equals("/get_token")) {
                 String tip = "Чтобы получить токен, нужно: \n\n"
                         + "1) Зайти на сайт https://www.tinkoff.ru/invest/ \n\n"
                         + "2) Войти в свой аккаунт \n\n"
@@ -326,8 +318,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
                         + "7) Скопировать сгенерированный токен";
 
                 execute(new SendMessage(str_chat_id, tip));
-            }
-            else if(update.getMessage().getText().toString().equals("/sandbox")) {
+
+            } else if (update.getMessage().getText().toString().equals("/sandbox")) {
                 String tip = "Чтобы использовать режим 'Песочница', нужно: \n\n"
                         + "1) Зайти на сайт https://tinkoffcreditsystems.github.io/invest-openapi/swagger-ui/#/ \n\n"
                         + "2) В параметре 'Servers' выбрать 'Работа с sandbox' \n\n"
@@ -344,43 +336,43 @@ public class TinkoffBot extends TelegramLongPollingBot {
                         + "13) Нажать кнопку 'Execute' \n\n"
                         + "14) Теперь вы можете работать с ботом";
                 execute(new SendMessage(str_chat_id, tip));
+
             }
-        }
-        else if(update.hasCallbackQuery()) {
+
+        } else if (update.hasCallbackQuery()) {
             sandboxMode = Integer.parseInt(update.getCallbackQuery().getData());
 
             Long chatId = update.getCallbackQuery().getMessage().getChatId();
 
             if (sandboxMode == 1) {
                 execute(new SendMessage(chatId, "Выбран режим песочницы \uD83C\uDFDD\uFE0F"));
-            }else if (sandboxMode == 0) {
+            } else if (sandboxMode == 0) {
                 execute(new SendMessage(chatId, "Выбран обычный режим торговли \uD83D\uDCB0"));
             }
 
         }
-
     }
-    public static SendMessage sendInlineKeyBoardMessage(long chatId) {
+        public static SendMessage sendInlineKeyBoardMessage ( long chatId){
 
 
-        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-        InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
-        inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
-        inlineKeyboardButtonSandbox.setCallbackData("1");
+            InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+            InlineKeyboardButton inlineKeyboardButtonSandbox = new InlineKeyboardButton();
+            inlineKeyboardButtonSandbox.setText("Песочница \uD83C\uDFDD\uFE0F");
+            inlineKeyboardButtonSandbox.setCallbackData("1");
 
-        InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
-        inlineKeyboardButtonDefault.setText("Обычный \uD83D\uDCB0");
-        inlineKeyboardButtonDefault.setCallbackData("0");
+            InlineKeyboardButton inlineKeyboardButtonDefault = new InlineKeyboardButton();
+            inlineKeyboardButtonDefault.setText("Обычный \uD83D\uDCB0");
+            inlineKeyboardButtonDefault.setCallbackData("0");
 
-        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-        keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
-        keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
+            List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+            keyboardButtonsRow1.add(inlineKeyboardButtonSandbox);
+            keyboardButtonsRow1.add(inlineKeyboardButtonDefault);
 
 
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-        rowList.add(keyboardButtonsRow1);
+            List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+            rowList.add(keyboardButtonsRow1);
 
-        inlineKeyboardMarkup.setKeyboard(rowList);
-        return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
+            inlineKeyboardMarkup.setKeyboard(rowList);
+            return new SendMessage().setChatId(chatId).setText("Выберите режим:").setReplyMarkup(inlineKeyboardMarkup);
+        }
     }
-}
