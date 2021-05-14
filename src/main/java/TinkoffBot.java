@@ -68,7 +68,8 @@ public class TinkoffBot extends TelegramLongPollingBot {
             String tokenToInsert;
             messages.add(update.getMessage().getText());
             MessageCounter++; //Шаг по истории запросов
-            
+            ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+            SendMessage sendMessage = new SendMessage().setChatId(chat_id);
 
 
             OkHttpOpenApiFactory factory = new OkHttpOpenApiFactory(TINTOKEN, logger);
